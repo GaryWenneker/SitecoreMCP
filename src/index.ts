@@ -134,13 +134,42 @@ Examples:
 - "search for items with name Home" → sitecore_search
 - "find all Page templates" → sitecore_search
 
-### Input formats supported:
-- Path: /sitecore/content/Home
-- GUID with braces: {AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF}
-- GUID without braces: AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF
-- GUID with dashes: AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF
+## 🆔 GUID/ID INPUT SUPPORT:
 
-All tools that accept 'path' parameter can also accept GUID format.
+### All tools that accept 'path' parameter also accept GUID/ID format:
+
+**Supported GUID formats (all work identically):**
+1. With curly braces and dashes: {46BE845E-0B5F-460B-A67C-1999AB94B239}
+2. Without braces, with dashes: 46BE845E-0B5F-460B-A67C-1999AB94B239
+3. Without dashes (32 hex chars): 46BE845E0B5F460BA67C1999AB94B239
+4. Lowercase or uppercase: Both work
+
+**The system automatically:**
+- Detects GUID input via regex pattern
+- Formats to Sitecore format: {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
+- Logs conversion in debug output: [getItem] GUID detected: ... → formatted as: {...}
+- Shows formatted GUID in error messages
+
+**Tools with GUID support:**
+✅ sitecore_get_item
+✅ sitecore_get_children
+✅ sitecore_get_field_value
+✅ sitecore_get_item_fields
+✅ All item operation tools
+
+**Example usage:**
+- User: "get children of {46BE845E-0B5F-460B-A67C-1999AB94B239}"
+  → sitecore_get_children(path="{46BE845E-0B5F-460B-A67C-1999AB94B239}")
+  → System formats and queries successfully
+
+- User: "show item 46BE845E0B5F460BA67C1999AB94B239"
+  → sitecore_get_item(path="46BE845E0B5F460BA67C1999AB94B239")
+  → System auto-formats to {46BE845E-0B5F-460B-A67C-1999AB94B239}
+
+**Best practice:**
+- Accept GUID in any format from user
+- System handles formatting automatically
+- No need to validate or transform GUID format in AI layer
 
 ## 🌍 LANGUAGE HANDLING:
 
