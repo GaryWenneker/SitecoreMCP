@@ -208,8 +208,16 @@ export class SitecoreService {
     _database: string = 'master',
     version?: number
   ): Promise<SitecoreItem & { versionCount?: number }> {
+    // Detect GUID input and format if needed
+    let effectivePath = path;
+    const guidRegex = /^\{?[A-Fa-f0-9]{8}(-?[A-Fa-f0-9]{4}){3}-?[A-Fa-f0-9]{12}\}?$/;
+    if (guidRegex.test(path)) {
+      effectivePath = this.formatGuid(path);
+      console.error(`[getItem] GUID detected: ${path} → formatted as: ${effectivePath}`);
+    }
+
     // Apply smart language default
-    const effectiveLanguage = this.getSmartLanguageDefault(path, language);
+    const effectiveLanguage = this.getSmartLanguageDefault(effectivePath, language);
 
     const query = `
       query GetItem($path: String!, $language: String!, $version: Int) {
@@ -232,17 +240,17 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, {
-      path,
+      path: effectivePath,
       language: effectiveLanguage,
       version,
     });
 
     if (!result.item) {
       // Try to get available languages for this item
-      let errorMessage = `Item not found: ${path} (language: ${effectiveLanguage}${version ? `, version: ${version}` : ''}).`;
+      let errorMessage = `Item not found: ${path} (formatted as: ${effectivePath}, language: ${effectiveLanguage}${version ? `, version: ${version}` : ''}).`;
       
       try {
-        const availableLanguages = await this.getAvailableLanguages(path);
+        const availableLanguages = await this.getAvailableLanguages(effectivePath);
         if (availableLanguages.length > 0) {
           errorMessage += ` Item exists in: ${availableLanguages.join(', ')}. Try one of these languages.`;
         } else {
@@ -262,7 +270,7 @@ export class SitecoreService {
     // Get total version count for this language
     let versionCount: number | undefined;
     try {
-      const versions = await this.getItemVersions(path, effectiveLanguage);
+      const versions = await this.getItemVersions(effectivePath, effectiveLanguage);
       versionCount = versions.length;
     } catch {
       // If version count fails, don't block the response
@@ -302,6 +310,9 @@ export class SitecoreService {
     const guidRegex = /^\{?[A-Fa-f0-9]{8}(-?[A-Fa-f0-9]{4}){3}-?[A-Fa-f0-9]{12}\}?$/;
     if (guidRegex.test(path)) {
       effectivePath = this.formatGuid(path);
+      console.error(`[getChildren] GUID detected: ${path} → formatted as: ${effectivePath}`);
+    } else {
+      console.error(`[getChildren] Using path as-is: ${path}`);
     }
 
     const query = `
@@ -325,7 +336,23 @@ export class SitecoreService {
     const result = await this.executeGraphQL(query, { path: effectivePath, language, version });
 
     if (!result.item) {
-      throw new Error(`Item not found: ${path}`);
+      // Try to get available languages for this item
+      let errorMessage = `Item not found: ${path} (formatted as: ${effectivePath}, language: ${language}${version ? `, version: ${version}` : ''}).`;
+      
+      try {
+        const availableLanguages = await this.getAvailableLanguages(effectivePath);
+        if (availableLanguages.length > 0) {
+          errorMessage += ` Item exists in: ${availableLanguages.join(', ')}. Try one of these languages.`;
+        } else {
+          errorMessage += ` Item does not exist in any common language, or path/GUID is invalid.`;
+        }
+      } catch {
+        // If language check fails, provide generic hint
+        errorMessage += ` The item might exist in a different language. Common languages: en, nl, nl-NL, de, fr.`;
+      }
+      
+      errorMessage += ` Tip: Check the GUID format or use sitecore_search to find the item.`;
+      throw new Error(errorMessage);
     }
 
     // In /items/master schema is children een directe array van items
