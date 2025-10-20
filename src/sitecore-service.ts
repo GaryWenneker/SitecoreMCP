@@ -123,6 +123,38 @@ export class SitecoreService {
   }
 
   /**
+   * Get available languages for an item
+   * Tries common languages and returns which ones have content
+   * @param path - Item path or GUID
+   * @returns Array of available language codes
+   */
+  private async getAvailableLanguages(path: string): Promise<string[]> {
+    const commonLanguages = ['en', 'nl', 'nl-NL', 'de-DE', 'fr-FR', 'es-ES', 'da', 'de', 'fr', 'es'];
+    const availableLanguages: string[] = [];
+
+    // Try each language with a simple query
+    for (const lang of commonLanguages) {
+      try {
+        const query = `
+          query CheckLanguage($path: String!, $language: String!) {
+            item(path: $path, language: $language) {
+              id
+            }
+          }
+        `;
+        const result = await this.executeGraphQL(query, { path, language: lang });
+        if (result.item) {
+          availableLanguages.push(lang);
+        }
+      } catch {
+        // Language not available, continue
+      }
+    }
+
+    return availableLanguages;
+  }
+
+  /**
    * Determine smart language default based on path
    * SITECORE BEST PRACTICE:
    * - Templates, renderings, system items: ALWAYS 'en'
@@ -206,12 +238,23 @@ export class SitecoreService {
     });
 
     if (!result.item) {
-      throw new Error(
-        `Item not found: ${path} (language: ${effectiveLanguage}${version ? `, version: ${version}` : ''}). ` +
-          `The item might exist in a different language version. ` +
-          `Common languages: en, nl, nl-NL, de, fr. ` +
-          `Tip: Use sitecore_get_children on the parent folder to see available items.`
-      );
+      // Try to get available languages for this item
+      let errorMessage = `Item not found: ${path} (language: ${effectiveLanguage}${version ? `, version: ${version}` : ''}).`;
+      
+      try {
+        const availableLanguages = await this.getAvailableLanguages(path);
+        if (availableLanguages.length > 0) {
+          errorMessage += ` Item exists in: ${availableLanguages.join(', ')}. Try one of these languages.`;
+        } else {
+          errorMessage += ` Item does not exist in any common language, or path is invalid.`;
+        }
+      } catch {
+        // If language check fails, provide generic hint
+        errorMessage += ` The item might exist in a different language. Common languages: en, nl, nl-NL, de, fr.`;
+      }
+      
+      errorMessage += ` Tip: Use sitecore_get_children on the parent folder to see available items.`;
+      throw new Error(errorMessage);
     }
 
     const item = result.item;
@@ -246,12 +289,21 @@ export class SitecoreService {
    * NEW: Supports version parameter
    */
   async getChildren(
-    path: string,
+  path: string,
     language: string = 'en',
     _database: string = 'master',
     _recursive: boolean = false,
     version?: number
   ): Promise<SitecoreItem[]> {
+
+    // Detect GUID input and format if needed
+    let effectivePath = path;
+    // GUID: 32 hex chars or {GUID} or GUID with dashes
+    const guidRegex = /^\{?[A-Fa-f0-9]{8}(-?[A-Fa-f0-9]{4}){3}-?[A-Fa-f0-9]{12}\}?$/;
+    if (guidRegex.test(path)) {
+      effectivePath = this.formatGuid(path);
+    }
+
     const query = `
       query GetChildren($path: String!, $language: String!, $version: Int) {
         item(path: $path, language: $language, version: $version) {
@@ -270,7 +322,7 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(query, { path, language, version });
+    const result = await this.executeGraphQL(query, { path: effectivePath, language, version });
 
     if (!result.item) {
       throw new Error(`Item not found: ${path}`);

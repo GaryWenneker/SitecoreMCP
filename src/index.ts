@@ -140,7 +140,27 @@ Examples:
 - GUID without braces: AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF
 - GUID with dashes: AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF
 
-All tools that accept 'path' parameter can also accept GUID format.`,
+All tools that accept 'path' parameter can also accept GUID format.
+
+## 🌍 LANGUAGE HANDLING:
+
+### When item is not found:
+The system will automatically check which languages the item exists in and suggest them.
+
+Error message will show:
+- "Item exists in: en, nl-NL, de-DE. Try one of these languages."
+- AI should retry the request with one of the suggested languages
+
+### Best practice:
+1. First attempt with default/requested language
+2. If error shows available languages, retry with suggested language
+3. Inform user which language was used to retrieve the item
+
+Example workflow:
+- User: "get item /sitecore/content/Home"
+- First try: language=en → Error: "Item exists in: nl-NL, de-DE"
+- Retry: language=nl-NL → Success
+- Response: "Retrieved item in Dutch (nl-NL)"`,
           },
         },
       ],
