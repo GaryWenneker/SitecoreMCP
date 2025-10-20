@@ -66,6 +66,12 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
           },
         ],
       },
+      {
+        name: 'tool-selection-guide',
+        description:
+          '📚 AI Tool Selection Rules for Sitecore MCP',
+        arguments: [],
+      },
     ],
   };
 });
@@ -84,6 +90,57 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
           content: {
             type: 'text',
             text: `/sitecore ${command}`,
+          },
+        },
+      ],
+    };
+  }
+
+  if (name === 'tool-selection-guide') {
+    return {
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `# Sitecore MCP Tool Selection Rules
+
+## 🎯 CRITICAL RULES:
+
+### When user asks about "children", "child items", "sub-items":
+✅ USE: sitecore_get_children
+❌ DO NOT USE: sitecore_query
+
+Examples:
+- "get children of /sitecore/content/Home" → sitecore_get_children
+- "show me child items under {GUID}" → sitecore_get_children
+- "what are the children" → sitecore_get_children
+- "list sub-items" → sitecore_get_children
+
+### When user explicitly mentions "query" or needs XPath/fast query:
+✅ USE: sitecore_query
+❌ DO NOT USE: sitecore_get_children
+
+Examples:
+- "run query /sitecore/content//*[@@templatename='Page']" → sitecore_query
+- "execute fast query" → sitecore_query
+- "query for all articles" → sitecore_query
+
+### When user asks to "search" or "find":
+✅ USE: sitecore_search (with filters)
+❌ DO NOT USE: sitecore_query or sitecore_get_children
+
+Examples:
+- "search for items with name Home" → sitecore_search
+- "find all Page templates" → sitecore_search
+
+### Input formats supported:
+- Path: /sitecore/content/Home
+- GUID with braces: {AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF}
+- GUID without braces: AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF
+- GUID with dashes: AAAB4C4D-0589-4F84-8CE4-D4DF3DF3F8DF
+
+All tools that accept 'path' parameter can also accept GUID format.`,
           },
         },
       ],
@@ -129,7 +186,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'sitecore_get_children',
         description:
-          'Get child items of a Sitecore item by path or ID. NEW: Supports version parameter.',
+          '🎯 PRIMARY TOOL for getting child/children items. Use this when the user asks about "children", "child items", "sub-items", or "items under/in" a path. Supports both path and GUID input. NEW: Supports version parameter. DO NOT use sitecore_query for simple children requests.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -162,7 +219,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'sitecore_query',
-        description: 'Execute a Sitecore query (fast query syntax) and return matching items.',
+        description: '⚠️ ADVANCED TOOL - Use ONLY when user explicitly mentions "query" or needs XPath-like fast query syntax (e.g., /sitecore/content//*[@@templatename=\'Article\']). For simple "get children" requests, use sitecore_get_children instead.',
         inputSchema: {
           type: 'object',
           properties: {
