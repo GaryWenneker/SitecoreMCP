@@ -11,28 +11,42 @@ A Model Context Protocol (MCP) server for Sitecore with **GraphQL API**, **versi
 
 ## ✨ Features
 
-### 🎯 Core Tools (18 total)
+### 🎯 Core Tools (21 total)
 
 **Item Operations:**
-- 🔍 **sitecore_get_item** - Get a specific Sitecore item (✨ with version support!)
-- 👶 **sitecore_get_children** - Get child items (✨ with version support!)
-- 📄 **sitecore_get_field_value** - Get a field value (✨ with version support!)
-- 🔎 **sitecore_query** - Execute Sitecore queries
-- 🔍 **sitecore_search** - Search items by name
-- 📋 **sitecore_get_template** - Get template information
+- 🔍 **sitecore_get_item** - Get a specific Sitecore item (with version support)
+- 👶 **sitecore_get_children** - Get child items (with version support)
+- 📄 **sitecore_get_field_value** - Get a field value (with version support)
+- � **sitecore_get_item_fields** - Get all fields of an item (template-aware)
+- �🔎 **sitecore_query** - Execute Sitecore queries
+- 🔍 **sitecore_search** - Search items with filters and ordering
+- 📄 **sitecore_search_paginated** - Search with pagination support
 
-**Version Control (NEW in v1.3.0!):**
+**Template Operations:**
+- 📋 **sitecore_get_template** - Get template information
+- 📚 **sitecore_get_templates** - Get multiple templates
+
+**Version Control:**
 - 🕐 **sitecore_get_item_versions** - See all versions of an item
 - 📊 **sitecore_get_item_with_statistics** - Get created/updated dates and users
 
-**Navigation (NEW in v1.3.0!):**
+**Navigation:**
 - ⬆️ **sitecore_get_parent** - Navigate to parent item
-- 🧭 **sitecore_get_ancestors** - Get all ancestors (breadcrumb!)
+- 🧭 **sitecore_get_ancestors** - Get all ancestors (breadcrumb)
+
+**Layout & Sites:**
+- 🎨 **sitecore_get_layout** - Get layout/presentation information
+- 🌐 **sitecore_get_sites** - Get Sitecore site configurations
+
+**Mutations (Create/Update/Delete):**
+- ➕ **sitecore_create_item** - Create new Sitecore items
+- ✏️ **sitecore_update_item** - Update existing items
+- ❌ **sitecore_delete_item** - Delete items
 
 **Advanced Features:**
 - 🔬 **sitecore_scan_schema** - Automatic GraphQL schema analysis
 - 💬 **sitecore_command** - Natural language `/sitecore` commands in chat
-- ⚡ **Slash Command Menu** - Type `/` in chat to see the `🔧 /sitecore` command!
+- 🔍 **sitecore_discover_item_dependencies** - Comprehensive item discovery with template, fields, and relationships
 
 ### 📣 Live progress (all tools)
 
