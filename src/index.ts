@@ -151,16 +151,22 @@ Examples:
 - Shows formatted GUID in error messages
 
 **Tools with GUID support:**
-✅ sitecore_get_item
-✅ sitecore_get_children
-✅ sitecore_get_field_value
-✅ sitecore_get_item_fields
+✅ sitecore_get_item (path parameter)
+✅ sitecore_get_children (path parameter)
+✅ sitecore_get_field_value (path parameter)
+✅ sitecore_get_item_fields (path parameter)
+✅ sitecore_search (rootItem parameter)
+✅ sitecore_search_paginated (rootItem parameter)
 ✅ All item operation tools
 
 **Example usage:**
 - User: "get children of {46BE845E-0B5F-460B-A67C-1999AB94B239}"
   → sitecore_get_children(path="{46BE845E-0B5F-460B-A67C-1999AB94B239}")
   → System formats and queries successfully
+
+- User: "search items under {46BE845E-0B5F-460B-A67C-1999AB94B239}"
+  → sitecore_search(rootItem="{46BE845E-0B5F-460B-A67C-1999AB94B239}")
+  → System formats GUID and searches under that item
 
 - User: "show item 46BE845E0B5F460BA67C1999AB94B239"
   → sitecore_get_item(path="46BE845E0B5F460BA67C1999AB94B239")

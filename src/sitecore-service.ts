@@ -470,6 +470,16 @@ export class SitecoreService {
     },
     orderBy?: Array<{ field: 'name' | 'displayName' | 'path'; direction: 'ASC' | 'DESC' }>
   ): Promise<SitecoreItem[]> {
+    // Detect GUID input in rootPath and format if needed
+    let effectiveRootPath = rootPath;
+    if (rootPath) {
+      const guidRegex = /^\{?[A-Fa-f0-9]{8}(-?[A-Fa-f0-9]{4}){3}-?[A-Fa-f0-9]{12}\}?$/;
+      if (guidRegex.test(rootPath)) {
+        effectiveRootPath = this.formatGuid(rootPath);
+        console.error(`[searchItems] GUID detected in rootPath: ${rootPath} → formatted as: ${effectiveRootPath}`);
+      }
+    }
+
     // NOTE: ContentSearchResult has DIFFERENT fields than Item!
     // ContentSearchResult fields: id, name, path, templateName, uri, language (String!)
     // Item fields: id, name, displayName, path, template, hasChildren, fields
@@ -506,7 +516,7 @@ export class SitecoreService {
 
     const result = await this.executeGraphQL(query, {
       keyword: searchText,
-      rootItem: rootPath,
+      rootItem: effectiveRootPath,
       language,
       first: maxItems,
       index,
@@ -623,6 +633,16 @@ export class SitecoreService {
     };
     totalCount: number | null;
   }> {
+    // Detect GUID input in rootPath and format if needed
+    let effectiveRootPath = rootPath;
+    if (rootPath) {
+      const guidRegex = /^\{?[A-Fa-f0-9]{8}(-?[A-Fa-f0-9]{4}){3}-?[A-Fa-f0-9]{12}\}?$/;
+      if (guidRegex.test(rootPath)) {
+        effectiveRootPath = this.formatGuid(rootPath);
+        console.error(`[searchItemsPaginated] GUID detected in rootPath: ${rootPath} → formatted as: ${effectiveRootPath}`);
+      }
+    }
+
     // NOTE: ContentSearchResult has DIFFERENT fields than Item!
     // ContentSearchResult fields: id, name, path, templateName, uri, language (String!)
     const query = `
@@ -667,7 +687,7 @@ export class SitecoreService {
 
     const result = await this.executeGraphQL(query, {
       keyword: searchText,
-      rootItem: rootPath,
+      rootItem: effectiveRootPath,
       language,
       first: maxItems,
       after,
