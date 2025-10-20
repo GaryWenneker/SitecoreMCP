@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: true
+      
+      - name: Check code formatting
+        run: npm run format:check
+        continue-on-error: true
+      
+      - name: Check for common issues
+        run: |
+          echo "[INFO] Scanning for potential code issues..."
+          if grep -r "console.log" src/ --include="*.ts" 2>/dev/null; then
+            echo "[WARN] Found console.log statements (should use proper logging)"
+          fi
+          if grep -r "debugger" src/ --include="*.ts" 2>/dev/null; then
+            echo "[WARN] Found debugger statements"
+          fi
+          echo "[OK] Code scan complete"
+        continue-on-error: true
+
+  type-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run TypeScript compiler check
+        run: npm run type-check
+
+  build:
+    name: Build and Test
+    runs-on: windows-latest
+    needs: [lint, type-check]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build TypeScript
+        run: npm run build
+      
+      - name: Check build output
+        run: |
+          if (!(Test-Path "dist/index.js")) {
+            Write-Error "Build failed: dist/index.js not found"
+            exit 1
+          }
+          Write-Host "[OK] Build successful: dist/index.js exists"
+        shell: pwsh
+      
+      - name: Run MCP Server Tests
+        env:
+          SITECORE_HOST: ${{ secrets.SITECORE_HOST }}
+          SITECORE_API_KEY: ${{ secrets.SITECORE_API_KEY }}
+        run: |
+          if ([string]::IsNullOrEmpty($env:SITECORE_HOST) -or [string]::IsNullOrEmpty($env:SITECORE_API_KEY)) {
+            Write-Host "[SKIP] Sitecore credentials not configured - skipping integration tests" -ForegroundColor Yellow
+            Write-Host "To enable tests, add SITECORE_HOST and SITECORE_API_KEY to repository secrets" -ForegroundColor Yellow
+            exit 0
+          }
+          .\scripts\tests\run-tests.ps1
+        shell: pwsh
+        continue-on-error: true
+      
+      - name: Validate package.json
+        run: |
+          $package = Get-Content package.json -Raw | ConvertFrom-Json
+          if ($package.version -notmatch '^\d+\.\d+\.\d+$') {
+            Write-Error "Invalid version format in package.json"
+            exit 1
+          }
+          Write-Host "[OK] package.json is valid"
+        shell: pwsh
+      
+      - name: Check for TypeScript errors
+        run: npx tsc --noEmit
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  root-hygiene:
+    name: Root Hygiene Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      
+      - name: Scan for misplaced files in root
+        run: |
+          shopt -s nullglob
+          bad_files=( $(ls -1 *.md *.ps1 *.cjs 2>/dev/null | grep -v '^README.md$' || true) )
+          if [ ${#bad_files[@]} -gt 0 ]; then
+            echo "[FAIL] Found documentation or scripts in repo root:"
+            for f in "${bad_files[@]}"; do echo "  - $f"; done
+            echo ""
+            echo "All .md files must be under docs/ and .ps1/.cjs files under scripts/"
+            exit 1
+          else
+            echo "[OK] Root is clean! Only config files and README.md present."
+          fi
+        shell: bash

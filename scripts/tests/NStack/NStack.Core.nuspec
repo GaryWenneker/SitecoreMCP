@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>NStack.Core</id>
+    <version>1.1.1</version>
+    <title>NStack.Core</title>
+    <authors>Miguel de Icaza</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>logo48.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/gui-cs/NStack/</projectUrl>
+    <description>NStack.Core brings a set of updated string APIs to .NET.  
+
+It starts with a new string type that is focused on Unicode code-points as opposed to the historical chars and  UTF-16 encoding and introduces a utf8 string that supports slicing</description>
+    <releaseNotes>See https://github.com/gui-cs/NStack/releases</releaseNotes>
+    <tags>unicode, c#</tags>
+    <repository type="git" url="https://github.com/gui-cs/NStack.git" commit="ce985f39994ac88fe410c3ef776a96ced04764cd" />
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="System.ValueTuple" version="4.5.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

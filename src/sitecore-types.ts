@@ -2,7 +2,7 @@
  * Sitecore GraphQL Type Definitions
  * Auto-generated from introspectionSchema.json
  * Generated: 2025-10-16 19:24:46
- * 
+ *
  * DO NOT EDIT MANUALLY - Regenerate using: .\generate-types.ps1
  */
 
@@ -240,7 +240,7 @@ export interface ContentSearchResults {
 /**
  * Statistics inline fragment
  * CRITICAL: DateField and TextField require { value }!
- * 
+ *
  * Usage:
  * ... on Statistics {
  *   created { value }
@@ -263,7 +263,7 @@ export interface Statistics {
 
 /**
  * GraphQL Query root
- * 
+ *
  * Available queries:
  * - item(path, language?, version?)
  * - search(keyword, rootItem?, language?, first?, index?, latestVersion?)
@@ -276,11 +276,7 @@ export interface Query {
    * @param language - Language (uses smart defaults if omitted)
    * @param version - Version number (uses latest if omitted)
    */
-  item?(
-    path: string,
-    language?: string,
-    version?: number
-  ): Item;
+  item?(path: string, language?: string, version?: number): Item;
 
   /**
    * Search items
@@ -307,11 +303,7 @@ export interface Query {
    * @param current - Get current site only
    * @param includeSystemSites - Include system sites
    */
-  sites?(
-    name?: string,
-    current?: boolean,
-    includeSystemSites?: boolean
-  ): any[]; // SiteGraphType[]
+  sites?(name?: string, current?: boolean, includeSystemSites?: boolean): any[]; // SiteGraphType[]
 }
 
 // ============================================
@@ -320,19 +312,14 @@ export interface Query {
 
 /**
  * GraphQL Mutation root
- * 
+ *
  * Available mutations:
  * - createItem(...)
  * - updateItem(...)
  * - deleteItem(...)
  */
 export interface Mutation {
-  createItem?(
-    path: string,
-    templateId: string,
-    name: string,
-    language?: string
-  ): Item;
+  createItem?(path: string, templateId: string, name: string, language?: string): Item;
 
   updateItem?(
     path: string,
@@ -341,11 +328,7 @@ export interface Mutation {
     fields?: Array<{ name: string; value: any }>
   ): Item;
 
-  deleteItem?(
-    path: string,
-    language?: string,
-    version?: number
-  ): boolean;
+  deleteItem?(path: string, language?: string, version?: number): boolean;
 }
 
 // ============================================
@@ -439,4 +422,3 @@ export interface GraphQLResponse<T = any> {
 // ============================================
 // EXPORT ALL (interfaces already exported above)
 // ============================================
-

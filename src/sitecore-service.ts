@@ -1,5 +1,5 @@
-import axios, { AxiosInstance } from "axios";
-import https from "https";
+import axios, { AxiosInstance } from 'axios';
+import https from 'https';
 
 export interface SitecoreItem {
   id: string;
@@ -37,12 +37,15 @@ export class SitecoreService {
     // GraphQL API endpoint - configurable via parameter or environment variable
     // Default: /sitecore/api/graph/items/master
     // Alternative: /sitecore/api/graph/items/web (for published content)
-    this.graphqlEndpoint = endpoint || process.env.SITECORE_ENDPOINT || `${this.sitecoreHost}/sitecore/api/graph/items/master`;
-    this.apiKey = apiKey || process.env.SITECORE_API_KEY || "";
-    
+    this.graphqlEndpoint =
+      endpoint ||
+      process.env.SITECORE_ENDPOINT ||
+      `${this.sitecoreHost}/sitecore/api/graph/items/master`;
+    this.apiKey = apiKey || process.env.SITECORE_API_KEY || '';
+
     // Validate API key is present
     if (!this.apiKey) {
-      throw new Error("SITECORE_API_KEY is required but not provided");
+      throw new Error('SITECORE_API_KEY is required but not provided');
     }
 
     // Create axios instance with authentication
@@ -53,15 +56,15 @@ export class SitecoreService {
       timeout: 30000,
       headers: {
         // These headers are REQUIRED for every GraphQL request
-        "sc_apikey": this.apiKey,
-        "Content-Type": "application/json"
-      }
+        sc_apikey: this.apiKey,
+        'Content-Type': 'application/json',
+      },
     });
-    
+
     // Add Basic Auth as fallback (optional)
     if (username && password) {
-      const auth = Buffer.from(`${username}:${password}`).toString("base64");
-      this.client.defaults.headers.common["Authorization"] = `Basic ${auth}`;
+      const auth = Buffer.from(`${username}:${password}`).toString('base64');
+      this.client.defaults.headers.common['Authorization'] = `Basic ${auth}`;
     }
   }
 
@@ -70,15 +73,13 @@ export class SitecoreService {
    */
   private async executeGraphQL(query: string, variables?: any): Promise<any> {
     try {
-      const response = await this.client.post<GraphQLResponse>(
-        this.graphqlEndpoint,
-        { query, variables }
-      );
+      const response = await this.client.post<GraphQLResponse>(this.graphqlEndpoint, {
+        query,
+        variables,
+      });
 
       if (response.data.errors) {
-        throw new Error(
-          `GraphQL Error: ${response.data.errors.map(e => e.message).join(', ')}`
-        );
+        throw new Error(`GraphQL Error: ${response.data.errors.map((e) => e.message).join(', ')}`);
       }
 
       return response.data.data;
@@ -99,24 +100,24 @@ export class SitecoreService {
    * Format GUID to Sitecore format with curly braces and dashes
    * CRITICAL: Sitecore GraphQL returns GUIDs WITHOUT dashes (CFFDFAFA317F4E5498988D16E6BB1E68)
    * but queries REQUIRE dashes ({CFFDFAFA-317F-4E54-9898-8D16E6BB1E68})
-   * 
+   *
    * @param guid - GUID string with or without dashes/curly braces
    * @returns Formatted GUID: {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
    */
   private formatGuid(guid: string): string {
     // Remove curly braces if present
-    let cleanGuid = guid.replace(/[{}]/g, '');
-    
+    const cleanGuid = guid.replace(/[{}]/g, '');
+
     // If already has dashes, just add curly braces
     if (cleanGuid.includes('-')) {
       return `{${cleanGuid}}`;
     }
-    
+
     // Add dashes in 8-4-4-4-12 format
     if (cleanGuid.length === 32) {
       return `{${cleanGuid.substring(0, 8)}-${cleanGuid.substring(8, 12)}-${cleanGuid.substring(12, 16)}-${cleanGuid.substring(16, 20)}-${cleanGuid.substring(20, 32)}}`;
     }
-    
+
     // If format is unexpected, return as-is with curly braces
     return `{${cleanGuid}}`;
   }
@@ -126,7 +127,7 @@ export class SitecoreService {
    * SITECORE BEST PRACTICE:
    * - Templates, renderings, system items: ALWAYS 'en'
    * - Content items: Use specified language or 'en' as fallback
-   * 
+   *
    * HELIX ARCHITECTURE:
    * - Foundation layer: /sitecore/templates/Foundation
    * - Feature layer: /sitecore/templates/Feature
@@ -148,11 +149,11 @@ export class SitecoreService {
       '/sitecore/templates',
       '/sitecore/layout',
       '/sitecore/system',
-      '/sitecore/media library'
+      '/sitecore/media library',
     ];
 
-    const isSystemPath = systemPaths.some(sp => path.toLowerCase().startsWith(sp.toLowerCase()));
-    
+    const isSystemPath = systemPaths.some((sp) => path.toLowerCase().startsWith(sp.toLowerCase()));
+
     if (isSystemPath) {
       return 'en'; // REQUIRED: Templates/Renderings are ALWAYS in 'en'
     }
@@ -172,12 +173,12 @@ export class SitecoreService {
   async getItem(
     path: string,
     language?: string,
-    database: string = "master",
+    _database: string = 'master',
     version?: number
   ): Promise<SitecoreItem & { versionCount?: number }> {
     // Apply smart language default
     const effectiveLanguage = this.getSmartLanguageDefault(path, language);
-    
+
     const query = `
       query GetItem($path: String!, $language: String!, $version: Int) {
         item(path: $path, language: $language, version: $version) {
@@ -198,18 +199,18 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(query, { 
-      path, 
-      language: effectiveLanguage, 
-      version 
+    const result = await this.executeGraphQL(query, {
+      path,
+      language: effectiveLanguage,
+      version,
     });
-    
+
     if (!result.item) {
       throw new Error(
         `Item not found: ${path} (language: ${effectiveLanguage}${version ? `, version: ${version}` : ''}). ` +
-        `The item might exist in a different language version. ` +
-        `Common languages: en, nl, nl-NL, de, fr. ` +
-        `Tip: Use sitecore_get_children on the parent folder to see available items.`
+          `The item might exist in a different language version. ` +
+          `Common languages: en, nl, nl-NL, de, fr. ` +
+          `Tip: Use sitecore_get_children on the parent folder to see available items.`
       );
     }
 
@@ -246,9 +247,9 @@ export class SitecoreService {
    */
   async getChildren(
     path: string,
-    language: string = "en",
-    database: string = "master",
-    recursive: boolean = false,
+    language: string = 'en',
+    _database: string = 'master',
+    _recursive: boolean = false,
     version?: number
   ): Promise<SitecoreItem[]> {
     const query = `
@@ -270,7 +271,7 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, { path, language, version });
-    
+
     if (!result.item) {
       throw new Error(`Item not found: ${path}`);
     }
@@ -298,8 +299,8 @@ export class SitecoreService {
    */
   async executeQuery(
     queryPath: string,
-    language: string = "en",
-    database: string = "master",
+    language: string = 'en',
+    _database: string = 'master',
     maxItems: number = 100
   ): Promise<SitecoreItem[]> {
     const query = `
@@ -334,12 +335,12 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(query, { 
-      path: queryPath, 
-      language, 
-      first: maxItems 
+    const result = await this.executeGraphQL(query, {
+      path: queryPath,
+      language,
+      first: maxItems,
     });
-    
+
     const items = result.search?.results?.items || [];
     return items.map((item: any) => {
       const fields: Record<string, any> = {};
@@ -373,8 +374,8 @@ export class SitecoreService {
     searchText?: string,
     rootPath?: string,
     templateName?: string,
-    language: string = "en",
-    database: string = "master",
+    language: string = 'en',
+    _database: string = 'master',
     maxItems: number = 50,
     index?: string,
     fieldsEqual?: Array<{ field: string; value: string }>,
@@ -424,17 +425,17 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(query, { 
+    const result = await this.executeGraphQL(query, {
       keyword: searchText,
       rootItem: rootPath,
-      language, 
+      language,
       first: maxItems,
       index,
-      latestVersion
+      latestVersion,
     });
-    
+
     let items = result.search?.results?.items || [];
-    
+
     // Filter op templateName indien nodig
     if (templateName) {
       items = items.filter((item: any) => item.templateName === templateName);
@@ -443,24 +444,22 @@ export class SitecoreService {
     // Apply enhanced client-side filters
     if (filters) {
       if (filters.pathContains) {
-        items = items.filter((item: any) => 
+        items = items.filter((item: any) =>
           item.path.toLowerCase().includes(filters.pathContains!.toLowerCase())
         );
       }
       if (filters.pathStartsWith) {
-        items = items.filter((item: any) => 
+        items = items.filter((item: any) =>
           item.path.toLowerCase().startsWith(filters.pathStartsWith!.toLowerCase())
         );
       }
       if (filters.nameContains) {
-        items = items.filter((item: any) => 
+        items = items.filter((item: any) =>
           item.name.toLowerCase().includes(filters.nameContains!.toLowerCase())
         );
       }
       if (filters.templateIn && filters.templateIn.length > 0) {
-        items = items.filter((item: any) => 
-          filters.templateIn!.includes(item.templateName)
-        );
+        items = items.filter((item: any) => filters.templateIn!.includes(item.templateName));
       }
       if (filters.hasChildrenFilter !== undefined) {
         // Note: ContentSearchResult does NOT have hasChildren field
@@ -481,7 +480,7 @@ export class SitecoreService {
           const aVal = a[sort.field] || '';
           const bVal = b[sort.field] || '';
           const comparison = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
-          
+
           if (comparison !== 0) {
             return sort.direction === 'ASC' ? comparison : -comparison;
           }
@@ -518,8 +517,8 @@ export class SitecoreService {
     searchText?: string,
     rootPath?: string,
     templateName?: string,
-    language: string = "en",
-    database: string = "master",
+    language: string = 'en',
+    _database: string = 'master',
     maxItems: number = 50,
     index?: string,
     fieldsEqual?: Array<{ field: string; value: string }>,
@@ -587,25 +586,25 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(query, { 
+    const result = await this.executeGraphQL(query, {
       keyword: searchText,
       rootItem: rootPath,
-      language, 
+      language,
       first: maxItems,
       after,
       index,
-      latestVersion
+      latestVersion,
     });
-    
+
     let items = result.search?.results?.items || [];
     const pageInfo = result.search?.results?.pageInfo || {
       hasNextPage: false,
       hasPreviousPage: false,
       startCursor: null,
-      endCursor: null
+      endCursor: null,
     };
     const totalCount = result.search?.results?.totalCount || null;
-    
+
     // Filter op templateName indien nodig
     if (templateName) {
       items = items.filter((item: any) => item.templateName === templateName);
@@ -614,24 +613,22 @@ export class SitecoreService {
     // Apply enhanced client-side filters
     if (filters) {
       if (filters.pathContains) {
-        items = items.filter((item: any) => 
+        items = items.filter((item: any) =>
           item.path.toLowerCase().includes(filters.pathContains!.toLowerCase())
         );
       }
       if (filters.pathStartsWith) {
-        items = items.filter((item: any) => 
+        items = items.filter((item: any) =>
           item.path.toLowerCase().startsWith(filters.pathStartsWith!.toLowerCase())
         );
       }
       if (filters.nameContains) {
-        items = items.filter((item: any) => 
+        items = items.filter((item: any) =>
           item.name.toLowerCase().includes(filters.nameContains!.toLowerCase())
         );
       }
       if (filters.templateIn && filters.templateIn.length > 0) {
-        items = items.filter((item: any) => 
-          filters.templateIn!.includes(item.templateName)
-        );
+        items = items.filter((item: any) => filters.templateIn!.includes(item.templateName));
       }
       if (filters.hasChildrenFilter !== undefined) {
         // Note: ContentSearchResult does NOT have hasChildren field
@@ -650,7 +647,7 @@ export class SitecoreService {
           const aVal = a[sort.field] || '';
           const bVal = b[sort.field] || '';
           const comparison = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
-          
+
           if (comparison !== 0) {
             return sort.direction === 'ASC' ? comparison : -comparison;
           }
@@ -679,7 +676,7 @@ export class SitecoreService {
     return {
       items: mappedItems,
       pageInfo,
-      totalCount
+      totalCount,
     };
   }
 
@@ -690,8 +687,8 @@ export class SitecoreService {
   async getFieldValue(
     path: string,
     fieldName: string,
-    language: string = "en",
-    database: string = "master",
+    language: string = 'en',
+    _database: string = 'master',
     version?: number
   ): Promise<{ fieldName: string; value: any; type: string }> {
     const query = `
@@ -706,7 +703,7 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, { path, fieldName, language, version });
-    
+
     if (!result.item || !result.item.field) {
       throw new Error(`Field '${fieldName}' not found in item: ${path}`);
     }
@@ -714,17 +711,14 @@ export class SitecoreService {
     return {
       fieldName: result.item.field.name,
       value: result.item.field.value,
-      type: "text", // GraphQL geeft geen type terug, default naar text
+      type: 'text', // GraphQL geeft geen type terug, default naar text
     };
   }
 
   /**
    * Get template information
    */
-  async getTemplate(
-    templatePath: string,
-    database: string = "master"
-  ): Promise<any> {
+  async getTemplate(templatePath: string, _database: string = 'master'): Promise<any> {
     // Apply smart language default (templates always 'en')
     const language = 'en';
 
@@ -747,9 +741,11 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, { path: templatePath, language });
-    
+
     if (!result.item) {
-      throw new Error(`Template not found: ${templatePath} (language: ${language}). Template items must always be queried with language='en'.`);
+      throw new Error(
+        `Template not found: ${templatePath} (language: ${language}). Template items must always be queried with language='en'.`
+      );
     }
 
     return {
@@ -764,13 +760,13 @@ export class SitecoreService {
   /**
    * Get all fields with values for an item based on its template
    * NEW FEATURE: Template-based field discovery
-   * 
+   *
    * When asked for "fields of item X":
    * 1. Get the item to find its template
    * 2. Query all fields from template definition
    * 3. Get actual values for those fields
    * 4. Return complete field list with values
-   * 
+   *
    * HELIX AWARENESS:
    * - Supports inherited fields from base templates
    * - Handles Foundation/Feature/Project template layers
@@ -802,12 +798,12 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(query, { 
-      path, 
-      language: effectiveLanguage, 
-      version 
+    const result = await this.executeGraphQL(query, {
+      path,
+      language: effectiveLanguage,
+      version,
     });
-    
+
     if (!result.item) {
       throw new Error(`Item not found: ${path}`);
     }
@@ -817,7 +813,7 @@ export class SitecoreService {
     return (result.item.fields || []).map((field: any) => ({
       name: field.name,
       value: field.value,
-      type: 'text' // GraphQL doesn't return field type, could be enhanced
+      type: 'text', // GraphQL doesn't return field type, could be enhanced
     }));
   }
 
@@ -825,11 +821,7 @@ export class SitecoreService {
    * Get layout/presentation information for an item
    * Schema requires: site (string), routePath (string), language (string)
    */
-  async getLayout(
-    site: string,
-    routePath: string,
-    language: string = "en"
-  ): Promise<any> {
+  async getLayout(site: string, routePath: string, language: string = 'en'): Promise<any> {
     const query = `
       query GetLayout($site: String!, $routePath: String!, $language: String!) {
         layout(site: $site, routePath: $routePath, language: $language) {
@@ -850,7 +842,7 @@ export class SitecoreService {
     const variables = { site, routePath, language };
 
     const result = await this.executeGraphQL(query, variables);
-    
+
     if (!result.layout) {
       throw new Error(`Layout not found for site: ${site}, route: ${routePath}`);
     }
@@ -862,11 +854,7 @@ export class SitecoreService {
    * Get site configuration information
    * NEW for /items/master: Uses plural 'sites' query with filtering
    */
-  async getSites(
-    name?: string,
-    current?: boolean,
-    includeSystemSites?: boolean
-  ): Promise<any[]> {
+  async getSites(name?: string, current?: boolean, includeSystemSites?: boolean): Promise<any[]> {
     const query = `
       query GetSites($name: String, $current: Boolean, $includeSystemSites: Boolean) {
         sites(name: $name, current: $current, includeSystemSites: $includeSystemSites) {
@@ -881,7 +869,7 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, { name, current, includeSystemSites });
-    
+
     if (!result.sites) {
       throw new Error(`Sites information not available`);
     }
@@ -894,7 +882,7 @@ export class SitecoreService {
    * SCHEMA-VALIDATED: Query.templates exists and returns [ItemTemplate]
    * ItemTemplate fields: id, name, baseTemplates, fields, ownFields (NO path!)
    */
-  async getTemplates(path?: string): Promise<any[]> {
+  async getTemplates(_path?: string): Promise<any[]> {
     // The templates() query EXISTS in GraphQL schema (Query.templates: [ItemTemplate])
     // But ItemTemplate only has: id, name, baseTemplates, fields, ownFields (NO path!)
     const query = `
@@ -915,9 +903,11 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, {});
-    
+
     if (!result.templates) {
-      throw new Error(`Templates query failed. Note: ItemTemplate type only has id, name, baseTemplates, fields, ownFields (no path field).`);
+      throw new Error(
+        `Templates query failed. Note: ItemTemplate type only has id, name, baseTemplates, fields, ownFields (no path field).`
+      );
     }
 
     // Return templates
@@ -933,8 +923,8 @@ export class SitecoreService {
     name: string,
     template: string,
     parent: string,
-    language: string = "en",
-    fields?: Record<string, any>
+    language: string = 'en',
+    _fields?: Record<string, any>
   ): Promise<any> {
     const mutation = `
       mutation CreateItem(
@@ -957,13 +947,13 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(mutation, { 
-      name, 
-      template, 
-      parent, 
-      language 
+    const result = await this.executeGraphQL(mutation, {
+      name,
+      template,
+      parent,
+      language,
     });
-    
+
     if (!result.createItem) {
       throw new Error(`Failed to create item: ${name}`);
     }
@@ -977,10 +967,10 @@ export class SitecoreService {
    */
   async updateItem(
     path: string,
-    language: string = "en",
+    language: string = 'en',
     version?: number,
     name?: string,
-    fields?: Record<string, any>
+    _fields?: Record<string, any>
   ): Promise<any> {
     const mutation = `
       mutation UpdateItem(
@@ -1003,13 +993,13 @@ export class SitecoreService {
       }
     `;
 
-    const result = await this.executeGraphQL(mutation, { 
-      path, 
-      language, 
-      version, 
-      name 
+    const result = await this.executeGraphQL(mutation, {
+      path,
+      language,
+      version,
+      name,
     });
-    
+
     if (!result.updateItem) {
       throw new Error(`Failed to update item: ${path}`);
     }
@@ -1021,21 +1011,18 @@ export class SitecoreService {
    * Delete a Sitecore item
    * NEW for /items/master: Mutation support!
    */
-  async deleteItem(
-    path: string,
-    deletePermanently: boolean = false
-  ): Promise<boolean> {
+  async deleteItem(path: string, deletePermanently: boolean = false): Promise<boolean> {
     const mutation = `
       mutation DeleteItem($path: String!, $deletePermanently: Boolean) {
         deleteItem(path: $path, deletePermanently: $deletePermanently)
       }
     `;
 
-    const result = await this.executeGraphQL(mutation, { 
-      path, 
-      deletePermanently 
+    const result = await this.executeGraphQL(mutation, {
+      path,
+      deletePermanently,
     });
-    
+
     return result.deleteItem === true;
   }
 
@@ -1121,7 +1108,7 @@ export class SitecoreService {
    */
   async analyzeSchema(): Promise<any> {
     const schema = await this.scanSchema();
-    
+
     const analysis: any = {
       timestamp: new Date().toISOString(),
       endpoint: this.graphqlEndpoint,
@@ -1131,11 +1118,11 @@ export class SitecoreService {
       operations: {
         queries: [],
         mutations: [],
-        subscriptions: []
+        subscriptions: [],
       },
       customTypes: [],
       templateTypes: [],
-      inputTypes: []
+      inputTypes: [],
     };
 
     // Process all types
@@ -1153,9 +1140,9 @@ export class SitecoreService {
               name: arg.name,
               description: arg.description,
               type: this.formatType(arg.type),
-              required: arg.type.kind === 'NON_NULL'
+              required: arg.type.kind === 'NON_NULL',
             })),
-            returnType: this.formatType(field.type)
+            returnType: this.formatType(field.type),
           });
         }
       }
@@ -1170,9 +1157,9 @@ export class SitecoreService {
               name: arg.name,
               description: arg.description,
               type: this.formatType(arg.type),
-              required: arg.type.kind === 'NON_NULL'
+              required: arg.type.kind === 'NON_NULL',
             })),
-            returnType: this.formatType(field.type)
+            returnType: this.formatType(field.type),
           });
         }
       }
@@ -1182,7 +1169,7 @@ export class SitecoreService {
         analysis.templateTypes.push({
           name: type.name,
           description: type.description,
-          fields: type.fields?.map((f: any) => f.name) || []
+          fields: type.fields?.map((f: any) => f.name) || [],
         });
       }
 
@@ -1191,23 +1178,27 @@ export class SitecoreService {
         analysis.inputTypes.push({
           name: type.name,
           description: type.description,
-          fields: type.inputFields?.map((f: any) => ({
-            name: f.name,
-            type: this.formatType(f.type)
-          })) || []
+          fields:
+            type.inputFields?.map((f: any) => ({
+              name: f.name,
+              type: this.formatType(f.type),
+            })) || [],
         });
       }
 
       // Other custom types
-      if (type.kind === 'OBJECT' && !type.name.startsWith('_') && 
-          type.name !== schema.queryType?.name &&
-          type.name !== schema.mutationType?.name &&
-          type.name !== schema.subscriptionType?.name) {
+      if (
+        type.kind === 'OBJECT' &&
+        !type.name.startsWith('_') &&
+        type.name !== schema.queryType?.name &&
+        type.name !== schema.mutationType?.name &&
+        type.name !== schema.subscriptionType?.name
+      ) {
         analysis.customTypes.push({
           name: type.name,
           description: type.description,
           kind: type.kind,
-          fieldCount: type.fields?.length || 0
+          fieldCount: type.fields?.length || 0,
         });
       }
     }
@@ -1220,15 +1211,15 @@ export class SitecoreService {
    */
   private formatType(type: any): string {
     if (!type) return 'Unknown';
-    
+
     if (type.kind === 'NON_NULL') {
       return this.formatType(type.ofType) + '!';
     }
-    
+
     if (type.kind === 'LIST') {
       return '[' + this.formatType(type.ofType) + ']';
     }
-    
+
     return type.name || 'Unknown';
   }
 
@@ -1238,10 +1229,10 @@ export class SitecoreService {
    */
   async parseSitecoreCommand(command: string): Promise<any> {
     const lowerCommand = command.toLowerCase().trim();
-    
+
     // Remove /sitecore prefix if present
     const cleanCommand = lowerCommand.replace(/^\/sitecore\s+/, '');
-    
+
     // Help command
     if (cleanCommand === 'help' || cleanCommand === '?' || cleanCommand === '') {
       return {
@@ -1260,8 +1251,8 @@ export class SitecoreService {
           '/sitecore delete item /sitecore/content/OldItem',
           '/sitecore scan schema',
           '/sitecore examples',
-          '/sitecore help'
-        ]
+          '/sitecore help',
+        ],
       };
     }
 
@@ -1273,39 +1264,70 @@ export class SitecoreService {
           {
             category: 'Basic Item Operations',
             examples: [
-              { command: '/sitecore get item /sitecore/content/Home', description: 'Get an item by path' },
-              { command: '/sitecore get /sitecore/content/Home', description: 'Short syntax for get item' },
-              { command: '/sitecore /sitecore/content/Home', description: 'Even shorter - just the path' },
-              { command: '/sitecore children of /sitecore/content', description: 'Get all children' },
-              { command: '/sitecore field Title from /sitecore/content/Home', description: 'Get specific field value' }
-            ]
+              {
+                command: '/sitecore get item /sitecore/content/Home',
+                description: 'Get an item by path',
+              },
+              {
+                command: '/sitecore get /sitecore/content/Home',
+                description: 'Short syntax for get item',
+              },
+              {
+                command: '/sitecore /sitecore/content/Home',
+                description: 'Even shorter - just the path',
+              },
+              {
+                command: '/sitecore children of /sitecore/content',
+                description: 'Get all children',
+              },
+              {
+                command: '/sitecore field Title from /sitecore/content/Home',
+                description: 'Get specific field value',
+              },
+            ],
           },
           {
             category: 'Search Operations',
             examples: [
               { command: '/sitecore search articles', description: 'Simple keyword search' },
               { command: '/sitecore search for "home page"', description: 'Search with quotes' },
-              { command: '/sitecore find items with template Article', description: 'Search by template' },
-              { command: '/sitecore search articles in /sitecore/content', description: 'Search in specific path' }
-            ]
+              {
+                command: '/sitecore find items with template Article',
+                description: 'Search by template',
+              },
+              {
+                command: '/sitecore search articles in /sitecore/content',
+                description: 'Search in specific path',
+              },
+            ],
           },
           {
             category: 'Templates & Schema',
             examples: [
               { command: '/sitecore templates', description: 'List all templates' },
               { command: '/sitecore scan schema', description: 'Analyze GraphQL schema' },
-              { command: '/sitecore sites', description: 'List all sites' }
-            ]
+              { command: '/sitecore sites', description: 'List all sites' },
+            ],
           },
           {
             category: 'Mutations (requires write permissions)',
             examples: [
-              { command: '/sitecore create item MyItem with template {GUID} under /sitecore/content', description: 'Create new item' },
-              { command: '/sitecore update item /sitecore/content/Home name "New Name"', description: 'Update item name' },
-              { command: '/sitecore delete item /sitecore/content/OldItem', description: 'Delete item' }
-            ]
-          }
-        ]
+              {
+                command:
+                  '/sitecore create item MyItem with template {GUID} under /sitecore/content',
+                description: 'Create new item',
+              },
+              {
+                command: '/sitecore update item /sitecore/content/Home name "New Name"',
+                description: 'Update item name',
+              },
+              {
+                command: '/sitecore delete item /sitecore/content/OldItem',
+                description: 'Delete item',
+              },
+            ],
+          },
+        ],
       };
     }
 
@@ -1314,12 +1336,16 @@ export class SitecoreService {
       const analysis = await this.analyzeSchema();
       return {
         action: 'schema_scan',
-        result: analysis
+        result: analysis,
       };
     }
 
     // List templates command
-    if (cleanCommand === 'templates' || cleanCommand === 'list templates' || cleanCommand === 'show templates') {
+    if (
+      cleanCommand === 'templates' ||
+      cleanCommand === 'list templates' ||
+      cleanCommand === 'show templates'
+    ) {
       const templates = await this.getTemplates();
       return {
         action: 'list_templates',
@@ -1328,17 +1354,22 @@ export class SitecoreService {
           templates: templates.slice(0, 20).map((t: any) => ({
             name: t.name,
             path: t.path,
-            id: t.id
+            id: t.id,
           })),
-          note: templates.length > 20 
-            ? `Showing first 20 of ${templates.length} templates. Use the API for full access.`
-            : null
-        }
+          note:
+            templates.length > 20
+              ? `Showing first 20 of ${templates.length} templates. Use the API for full access.`
+              : null,
+        },
       };
     }
 
     // List sites command
-    if (cleanCommand === 'sites' || cleanCommand === 'list sites' || cleanCommand === 'show sites') {
+    if (
+      cleanCommand === 'sites' ||
+      cleanCommand === 'list sites' ||
+      cleanCommand === 'show sites'
+    ) {
       try {
         const sites = await this.getSites();
         return {
@@ -1349,22 +1380,25 @@ export class SitecoreService {
               name: s.name,
               hostName: s.hostName,
               database: s.database,
-              language: s.language
-            }))
-          }
+              language: s.language,
+            })),
+          },
         };
-      } catch (error) {
+      } catch (_error) {
         return {
           action: 'list_sites',
-          error: 'Sites query returned no data. This might not be configured in your Sitecore instance.',
-          result: { count: 0, sites: [] }
+          error:
+            'Sites query returned no data. This might not be configured in your Sitecore instance.',
+          result: { count: 0, sites: [] },
         };
       }
     }
 
     // Get item with version support
     // Patterns: "get item PATH", "get PATH", "PATH", "get item PATH version N", "get PATH version N"
-    const getItemVersionMatch = cleanCommand.match(/(?:get\s+(?:item\s+)?)?([\/\w-]+)\s+version\s+(\d+)/);
+    const getItemVersionMatch = cleanCommand.match(
+      /(?:get\s+(?:item\s+)?)?([\/\w-]+)\s+version\s+(\d+)/
+    );
     if (getItemVersionMatch) {
       const path = getItemVersionMatch[1].trim();
       const version = parseInt(getItemVersionMatch[2]);
@@ -1372,37 +1406,43 @@ export class SitecoreService {
       return {
         action: 'get_item',
         result: item,
-        note: `Retrieved version ${version} of item`
+        note: `Retrieved version ${version} of item`,
       };
     }
 
     // Get item (various patterns)
-    const getItemMatch = cleanCommand.match(/^(?:get\s+(?:item\s+)?)?([\/].+?)(?:\s+(?:from|in)\s+.+)?$/);
+    const getItemMatch = cleanCommand.match(
+      /^(?:get\s+(?:item\s+)?)?([\/].+?)(?:\s+(?:from|in)\s+.+)?$/
+    );
     if (getItemMatch && !cleanCommand.includes('search') && !cleanCommand.includes('field')) {
       const path = getItemMatch[1].trim();
       const item = await this.getItem(path);
       return {
         action: 'get_item',
-        result: item
+        result: item,
       };
     }
 
     // Search with template filter
     // Pattern: "find items with template TEMPLATE", "search items with template TEMPLATE"
-    const searchTemplateMatch = cleanCommand.match(/(?:find|search)\s+(?:items\s+)?(?:with|by)\s+template\s+(.+)/);
+    const searchTemplateMatch = cleanCommand.match(
+      /(?:find|search)\s+(?:items\s+)?(?:with|by)\s+template\s+(.+)/
+    );
     if (searchTemplateMatch) {
       const templateName = searchTemplateMatch[1].trim();
       const results = await this.searchItems(undefined, undefined, templateName);
       return {
         action: 'search',
         result: results,
-        note: `Found items with template: ${templateName}`
+        note: `Found items with template: ${templateName}`,
       };
     }
 
     // Search with path context
     // Pattern: "search KEYWORD in PATH", "search for KEYWORD in PATH"
-    const searchInPathMatch = cleanCommand.match(/search\s+(?:for\s+)?["\']?(.+?)["\']?\s+in\s+([\/].+)/);
+    const searchInPathMatch = cleanCommand.match(
+      /search\s+(?:for\s+)?["\']?(.+?)["\']?\s+in\s+([\/].+)/
+    );
     if (searchInPathMatch) {
       const searchText = searchInPathMatch[1].trim();
       const rootPath = searchInPathMatch[2].trim();
@@ -1410,7 +1450,7 @@ export class SitecoreService {
       return {
         action: 'search',
         result: results,
-        note: `Searching for "${searchText}" in ${rootPath}`
+        note: `Searching for "${searchText}" in ${rootPath}`,
       };
     }
 
@@ -1422,7 +1462,7 @@ export class SitecoreService {
       const results = await this.searchItems(searchText);
       return {
         action: 'search',
-        result: results
+        result: results,
       };
     }
 
@@ -1434,26 +1474,30 @@ export class SitecoreService {
       const children = await this.getChildren(path);
       return {
         action: 'get_children',
-        result: children
+        result: children,
       };
     }
 
     // Field command (various patterns)
     // Pattern: "field FIELD from PATH", "get field FIELD from PATH", "show field FIELD from PATH"
-    const fieldMatch = cleanCommand.match(/(?:get\s+|show\s+)?field\s+(\w+)\s+(?:from|of|in)\s+([\/].+)/);
+    const fieldMatch = cleanCommand.match(
+      /(?:get\s+|show\s+)?field\s+(\w+)\s+(?:from|of|in)\s+([\/].+)/
+    );
     if (fieldMatch) {
       const fieldName = fieldMatch[1].trim();
       const path = fieldMatch[2].trim();
       const field = await this.getFieldValue(path, fieldName);
       return {
         action: 'get_field',
-        result: field
+        result: field,
       };
     }
 
     // Create item command
     // Pattern: "create item NAME with template TEMPLATE under PARENT"
-    const createMatch = cleanCommand.match(/create\s+(?:item\s+)?(\w+)\s+(?:with\s+)?template\s+([^\s]+)\s+(?:under|in|at)\s+([\/].+)/);
+    const createMatch = cleanCommand.match(
+      /create\s+(?:item\s+)?(\w+)\s+(?:with\s+)?template\s+([^\s]+)\s+(?:under|in|at)\s+([\/].+)/
+    );
     if (createMatch) {
       const name = createMatch[1].trim();
       const template = createMatch[2].trim();
@@ -1463,20 +1507,22 @@ export class SitecoreService {
         return {
           action: 'create_item',
           result: result,
-          note: `Created item "${name}" at ${result.path}`
+          note: `Created item "${name}" at ${result.path}`,
         };
       } catch (error: any) {
         return {
           action: 'create_item',
           error: error.message,
-          note: 'Item creation failed. This requires write permissions on the API key.'
+          note: 'Item creation failed. This requires write permissions on the API key.',
         };
       }
     }
 
     // Update item command
     // Pattern: "update item PATH name NAME", "update PATH name NAME"
-    const updateMatch = cleanCommand.match(/update\s+(?:item\s+)?([\/][^\s]+)\s+name\s+["\']?(.+?)["\']?$/);
+    const updateMatch = cleanCommand.match(
+      /update\s+(?:item\s+)?([\/][^\s]+)\s+name\s+["\']?(.+?)["\']?$/
+    );
     if (updateMatch) {
       const path = updateMatch[1].trim();
       const newName = updateMatch[2].trim();
@@ -1485,13 +1531,13 @@ export class SitecoreService {
         return {
           action: 'update_item',
           result: result,
-          note: `Updated item name to "${newName}"`
+          note: `Updated item name to "${newName}"`,
         };
       } catch (error: any) {
         return {
           action: 'update_item',
           error: error.message,
-          note: 'Item update failed. This requires write permissions on the API key.'
+          note: 'Item update failed. This requires write permissions on the API key.',
         };
       }
     }
@@ -1506,13 +1552,13 @@ export class SitecoreService {
         return {
           action: 'delete_item',
           result: { success: result, path: path },
-          note: result ? `Item deleted: ${path}` : `Item deletion failed: ${path}`
+          note: result ? `Item deleted: ${path}` : `Item deletion failed: ${path}`,
         };
       } catch (error: any) {
         return {
           action: 'delete_item',
           error: error.message,
-          note: 'Item deletion failed. This requires write permissions on the API key.'
+          note: 'Item deletion failed. This requires write permissions on the API key.',
         };
       }
     }
@@ -1520,14 +1566,15 @@ export class SitecoreService {
     // Unknown command - provide smart suggestions
     return {
       action: 'unknown',
-      message: 'Unknown command. Type "/sitecore help" or "/sitecore examples" for available commands.',
+      message:
+        'Unknown command. Type "/sitecore help" or "/sitecore examples" for available commands.',
       input: command,
       suggestions: [
         'Try: /sitecore get item /sitecore/content/Home',
         'Try: /sitecore search articles',
         'Try: /sitecore children of /sitecore/content',
-        'Try: /sitecore help'
-      ]
+        'Try: /sitecore help',
+      ],
     };
   }
 
@@ -1537,7 +1584,7 @@ export class SitecoreService {
    */
   async getParent(
     path: string,
-    language: string = "en",
+    language: string = 'en',
     version?: number
   ): Promise<SitecoreItem | null> {
     const query = `
@@ -1559,7 +1606,7 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, { path, language, version });
-    
+
     if (!result.item || !result.item.parent) {
       return null; // Root item has no parent
     }
@@ -1585,7 +1632,7 @@ export class SitecoreService {
    */
   async getAncestors(
     path: string,
-    language: string = "en",
+    language: string = 'en',
     version?: number
   ): Promise<SitecoreItem[]> {
     const ancestors: SitecoreItem[] = [];
@@ -1594,13 +1641,13 @@ export class SitecoreService {
     while (true) {
       const parent = await this.getParent(currentPath, language, version);
       if (!parent) break; // Reached root
-      
+
       ancestors.push(parent);
       currentPath = parent.path;
-      
+
       // Safety check to prevent infinite loops
       if (ancestors.length > 50) {
-        throw new Error("Too many ancestors (max 50). Possible circular reference.");
+        throw new Error('Too many ancestors (max 50). Possible circular reference.');
       }
     }
 
@@ -1613,17 +1660,18 @@ export class SitecoreService {
    */
   async getItemVersions(
     path: string,
-    language: string = "en"
+    language: string = 'en'
   ): Promise<Array<{ version: number; item: SitecoreItem }>> {
     // Note: GraphQL doesn't have a direct "all versions" query
     // We need to query version by version until we get null
     const versions: Array<{ version: number; item: SitecoreItem }> = [];
-    
-    for (let v = 1; v <= 20; v++) { // Check up to 20 versions
+
+    for (let v = 1; v <= 20; v++) {
+      // Check up to 20 versions
       try {
-        const item = await this.getItem(path, language, "master", v);
+        const item = await this.getItem(path, language, 'master', v);
         versions.push({ version: v, item });
-      } catch (error) {
+      } catch (_error) {
         // Version doesn't exist, stop searching
         break;
       }
@@ -1639,9 +1687,11 @@ export class SitecoreService {
    */
   async getItemWithStatistics(
     path: string,
-    language: string = "en",
+    language: string = 'en',
     version?: number
-  ): Promise<SitecoreItem & { created?: string; updated?: string; createdBy?: string; updatedBy?: string }> {
+  ): Promise<
+    SitecoreItem & { created?: string; updated?: string; createdBy?: string; updatedBy?: string }
+  > {
     const query = `
       query GetItemWithStats($path: String!, $language: String!, $version: Int) {
         item(path: $path, language: $language, version: $version) {
@@ -1673,7 +1723,7 @@ export class SitecoreService {
     `;
 
     const result = await this.executeGraphQL(query, { path, language, version });
-    
+
     if (!result.item) {
       throw new Error(`Item not found: ${path}`);
     }
@@ -1699,18 +1749,18 @@ export class SitecoreService {
 
   /**
    * COMPREHENSIVE DISCOVERY: Get item with ALL dependencies
-   * 
+   *
    * NEW FEATURE v1.6.0!
-   * 
+   *
    * Automatically discovers and returns:
    * 1. Content item details
    * 2. Template with full inheritance chain
    * 3. All fields from template hierarchy
    * 4. Renderings associated with template or item
    * 5. GraphQL resolvers for those renderings
-   * 
+   *
    * This enables AI-assisted editing with complete context of what belongs to a content item.
-   * 
+   *
    * WORKFLOW:
    * - Get content item (nl-NL or specified language)
    * - Extract template ID
@@ -1719,7 +1769,7 @@ export class SitecoreService {
    * - Get all fields from template hierarchy
    * - Search for renderings (if enabled)
    * - Find resolvers (if enabled)
-   * 
+   *
    * @param path - Content item path or ID
    * @param language - Content language (default: nl-NL)
    * @param includeRenderings - Include renderings (default: true)
@@ -1727,7 +1777,7 @@ export class SitecoreService {
    */
   async discoverItemDependencies(
     path: string,
-    language: string = "nl-NL",
+    language: string = 'nl-NL',
     includeRenderings: boolean = false,
     includeResolvers: boolean = false,
     progressCallback?: (step: number, message: string) => void
@@ -1757,7 +1807,7 @@ export class SitecoreService {
       const item = await this.getItem(path, language);
       console.log(`[Discovery] Step 1 complete: ${item?.name}`);
       progressCallback?.(1, `Content item retrieved: ${item?.name}`);
-      
+
       if (!item) {
         throw new Error(`Item not found: ${path} (language: ${language})`);
       }
@@ -1768,15 +1818,15 @@ export class SitecoreService {
       // SOLUTION: Template items ARE regular items, just query them in 'en' language
       // CRITICAL: Format GUID with dashes - GraphQL returns without dashes but requires them in queries
       const templateId = this.formatGuid(item.templateId);
-      const templateName = item.templateName;
+      const _templateName = item.templateName;
       let template: any = null;
-      let templateInheritance: any[] = [];
-      
+      const templateInheritance: any[] = [];
+
       try {
         // Templates are just items in 'en' language
         // Use getItem() which works for all items including templates
         const templateItem = await this.getItem(templateId, 'en');
-        
+
         if (templateItem) {
           console.log(`[Discovery] Step 2: Template found: ${templateItem.name}`);
           progressCallback?.(2, `Template retrieved: ${templateItem.name}`);
@@ -1784,7 +1834,7 @@ export class SitecoreService {
           const templateFields = await this.getItemFieldsFromTemplate(templateId, 'en');
           console.log(`[Discovery] Step 2: Retrieved ${templateFields.length} template fields`);
           progressCallback?.(2, `Template has ${templateFields.length} fields`);
-          
+
           template = {
             id: templateItem.id,
             name: templateItem.name,
@@ -1792,18 +1842,20 @@ export class SitecoreService {
             path: templateItem.path,
             template: {
               id: templateItem.templateId,
-              name: templateItem.templateName
+              name: templateItem.templateName,
             },
             hasChildren: templateItem.hasChildren,
-            fields: templateFields.map(f => ({ name: f.name, value: f.value }))
+            fields: templateFields.map((f) => ({ name: f.name, value: f.value })),
           };
 
           progressCallback?.(3, 'Checking template inheritance...');
           console.log(`[Discovery] Step 3: Checking template inheritance...`);
           // STEP 3: Follow template inheritance (base templates)
           // Get base templates from __Base template field
-          const baseTemplatesField = template.fields?.find((f: any) => f.name === '__Base template');
-          
+          const baseTemplatesField = template.fields?.find(
+            (f: any) => f.name === '__Base template'
+          );
+
           if (baseTemplatesField && baseTemplatesField.value) {
             // Parse base template IDs (pipe-separated)
             // CRITICAL: Format each GUID properly with dashes
@@ -1811,17 +1863,22 @@ export class SitecoreService {
               .split('|')
               .filter((id: string) => id.trim())
               .map((id: string) => this.formatGuid(id));
-            
+
             console.log(`[Discovery] Step 3: Found ${baseTemplateIds.length} base template(s)`);
-            progressCallback?.(3, `Found ${baseTemplateIds.length} base template(s), retrieving...`);
+            progressCallback?.(
+              3,
+              `Found ${baseTemplateIds.length} base template(s), retrieving...`
+            );
             // Get each base template as a regular item (ALWAYS 'en' language)
             for (const baseId of baseTemplateIds) {
               try {
                 const baseTemplateItem = await this.getItem(baseId, 'en');
                 if (baseTemplateItem) {
-                  console.log(`[Discovery] Step 3: Retrieved base template: ${baseTemplateItem.name}`);
+                  console.log(
+                    `[Discovery] Step 3: Retrieved base template: ${baseTemplateItem.name}`
+                  );
                 }
-                
+
                 if (baseTemplateItem) {
                   templateInheritance.push({
                     id: baseTemplateItem.id,
@@ -1830,11 +1887,11 @@ export class SitecoreService {
                     path: baseTemplateItem.path,
                     template: {
                       id: baseTemplateItem.templateId,
-                      name: baseTemplateItem.templateName
-                    }
+                      name: baseTemplateItem.templateName,
+                    },
                   });
                 }
-              } catch (error) {
+              } catch (_error) {
                 // Skip if base template not found
                 console.error(`Base template not found: ${baseId}`);
               }
@@ -1842,8 +1899,8 @@ export class SitecoreService {
             progressCallback?.(3, `Retrieved ${templateInheritance.length} base template(s)`);
           }
         }
-      } catch (error) {
-        console.error(`Template not found: ${templateId}`, error);
+      } catch (_error) {
+        console.error(`Template not found: ${templateId}`);
       }
 
       progressCallback?.(4, 'Getting all item fields...');
@@ -1856,7 +1913,7 @@ export class SitecoreService {
 
       // STEP 5: Search for renderings (if enabled)
       let renderings: any[] = [];
-      
+
       if (includeRenderings && template) {
         progressCallback?.(5, 'Searching for renderings (this may take a while)...');
         console.log(`[Discovery] Step 5: Searching for renderings (this may take a while)...`);
@@ -1864,12 +1921,12 @@ export class SitecoreService {
           // Search for renderings in /sitecore/layout/Renderings
           // Filter by template name (Feature/Module pattern)
           const renderingSearch = await this.searchItems(
-            template.name,             // searchText
-            '/sitecore/layout/Renderings',  // rootPath
-            undefined,                 // templateName filter
-            'en',                      // language
-            'master',                  // database
-            50                         // maxItems
+            template.name, // searchText
+            '/sitecore/layout/Renderings', // rootPath
+            undefined, // templateName filter
+            'en', // language
+            'master', // database
+            50 // maxItems
           );
 
           renderings = renderingSearch || [];
@@ -1885,19 +1942,19 @@ export class SitecoreService {
 
       // STEP 6: Find resolvers (if enabled)
       let resolvers: any[] = [];
-      
+
       if (includeResolvers && renderings.length > 0) {
         progressCallback?.(6, 'Searching for resolvers (this may take a while)...');
         console.log(`[Discovery] Step 6: Searching for resolvers (this may take a while)...`);
         try {
           // Search for resolvers in /sitecore/system/Modules/Layout Service/Rendering Contents Resolvers
           const resolverSearch = await this.searchItems(
-            template?.name || '',     // searchText
-            '/sitecore/system/Modules/Layout Service/Rendering Contents Resolvers',  // rootPath
-            undefined,                // templateName filter
-            'en',                     // language
-            'master',                 // database
-            50                        // maxItems
+            template?.name || '', // searchText
+            '/sitecore/system/Modules/Layout Service/Rendering Contents Resolvers', // rootPath
+            undefined, // templateName filter
+            'en', // language
+            'master', // database
+            50 // maxItems
           );
 
           resolvers = resolverSearch || [];
@@ -1923,7 +1980,7 @@ export class SitecoreService {
         totalFields: totalFields,
         inheritanceDepth: templateInheritance.length,
         ...(includeRenderings && { renderingCount: renderings.length }),
-        ...(includeResolvers && { resolverCount: resolvers.length })
+        ...(includeResolvers && { resolverCount: resolvers.length }),
       };
 
       console.log(`[Discovery] Complete! Summary:`, summary);
@@ -1935,11 +1992,13 @@ export class SitecoreService {
         fields: fieldsArray,
         ...(includeRenderings && { renderings }),
         ...(includeResolvers && { resolvers }),
-        summary
+        summary,
       };
     } catch (error) {
       console.error('[Discovery] Error:', error);
-      throw new Error(`Error discovering item dependencies: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Error discovering item dependencies: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

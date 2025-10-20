@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Terminal.Gui</id>
+    <version>1.17.1</version>
+    <title>Terminal.Gui - Cross platform Terminal User Interface (TUI) toolkit for .NET</title>
+    <authors>Miguel de Icaza, Charlie Kindel (@tig), @BDisp</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>logo.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/gui-cs/Terminal.Gui/</projectUrl>
+    <description>Cross platform Terminal UI toolkit for .NET</description>
+    <releaseNotes>See: https://github.com/gui-cs/Terminal.Gui/releases</releaseNotes>
+    <tags>csharp, terminal, c#, f#, gui, toolkit, console, tui</tags>
+    <repository type="git" url="https://github.com/gui-cs/Terminal.Gui.git" commit="3fbab50a08760a3849bc6e2caa51e24fc732502b" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.7.2">
+        <dependency id="NStack.Core" version="1.1.1" exclude="Build,Analyzers" />
+        <dependency id="System.Management" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net6.0">
+        <dependency id="NStack.Core" version="1.1.1" exclude="Build,Analyzers" />
+        <dependency id="System.Management" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net7.0">
+        <dependency id="NStack.Core" version="1.1.1" exclude="Build,Analyzers" />
+        <dependency id="System.Management" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net8.0">
+        <dependency id="NStack.Core" version="1.1.1" exclude="Build,Analyzers" />
+        <dependency id="System.Management" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="NStack.Core" version="1.1.1" exclude="Build,Analyzers" />
+        <dependency id="System.Management" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.1">
+        <dependency id="NStack.Core" version="1.1.1" exclude="Build,Analyzers" />
+        <dependency id="System.Management" version="8.0.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

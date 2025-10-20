@@ -1,5 +1,12 @@
 # Sitecore MCP Server
 
+[![CI](https://github.com/GaryWenneker/SitecoreMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/GaryWenneker/SitecoreMCP/actions/workflows/ci.yml)
+[![Root Hygiene](https://github.com/GaryWenneker/SitecoreMCP/actions/workflows/root-scan.yml/badge.svg)](https://github.com/GaryWenneker/SitecoreMCP/actions/workflows/root-scan.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
+[![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
+
 A Model Context Protocol (MCP) server for Sitecore with **GraphQL API**, **version control**, **parent navigation**, and **item statistics**. Query Sitecore items via AI assistants like Claude and GitHub Copilot.
 
 ## ✨ Features
@@ -232,15 +239,32 @@ npm install
 npm run build
 ```
 
-### 2. Test SPE API
+### 2. Configure Environment
 
-Before configuring the MCP server, first test if the SPE API works:
+Copy `.env.example` to `.env` and configure your Sitecore instance:
 
-```powershell
-.\test-spe-api.ps1 -SitecoreHost "https://your-sitecore-instance.com" -Username "admin"
+```bash
+SITECORE_HOST=https://your-sitecore-instance.com
+SITECORE_API_KEY=your-api-key-here
 ```
 
-### 3. Configure your IDE/Tool
+### 3. Run Tests
+
+Verify that all MCP tools are working correctly:
+
+```powershell
+.\scripts\tests\run-tests.ps1
+```
+
+This will run a comprehensive test suite covering:
+- ✅ Basic queries (item retrieval, children, fields)
+- ✅ Advanced search & discovery
+- ✅ Navigation & hierarchy (parent, ancestors)
+- ✅ Utilities & extensions
+
+Expected output: **17/17 tests passed (100% success rate)**
+
+### 4. Configure your IDE/Tool
 
 Choose your favorite tool and configure the Sitecore MCP server:
 
@@ -261,8 +285,7 @@ See [docs/guides/INSTALLATION.md](docs/guides/INSTALLATION.md) for detailed conf
       "args": ["c:\\gary\\Sitecore\\SitecoreMCP\\dist\\index.js"],
       "env": {
         "SITECORE_HOST": "https://your-sitecore-instance.com",
-        "SITECORE_USERNAME": "admin",
-        "SITECORE_PASSWORD": "your_password"
+        "SITECORE_API_KEY": "your-api-key-here"
       }
     }
   }
@@ -271,7 +294,7 @@ See [docs/guides/INSTALLATION.md](docs/guides/INSTALLATION.md) for detailed conf
 
 For VS Code, Rider and Visual Studio configurations, see [docs/guides/INSTALLATION.md](docs/guides/INSTALLATION.md).
 
-### 4. Restart your tool
+### 5. Restart your tool
 
 - **Claude Desktop**: Close completely and restart
 - **VS Code**: Reload Window (Ctrl+Shift+P)
