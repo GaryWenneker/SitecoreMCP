@@ -1,0 +1,13 @@
+{
+  "github.copilot.chat.mcp.servers": {
+    "sitecore": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        "SITECORE_HOST": "https://your-sitecore-instance.com",
+        "SITECORE_USERNAME": "admin",
+        "SITECORE_PASSWORD": "jouw_wachtwoord_hier"
+      }
+    }
+  }
+}

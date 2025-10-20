@@ -1,0 +1,63 @@
+# Development files
+.env
+.env.*
+!.env.example
+.vscode/settings.json
+*.log
+
+# Source files (we only need dist/)
+src/**
+tsconfig.json
+
+# Test files
+test-*.ps1
+Load-DotEnv.ps1
+
+# Documentation (keep README.md only)
+ALTERNATIEVE-API.md
+API-KEUZE.md
+BACKLOG.md
+BESTE-OPLOSSING.md
+CLEANUP-COMPLETE.md
+COMPLETE-SCHEMA-ANALYSE.md
+CONFIGURATIE-VOORBEELDEN.md
+FINAL-STATUS-v1.1.md
+FINAL-STATUS.md
+GRAPHQL-OPLOSSING.md
+GRAPHQL-SCHEMA.md
+GRAPHQL-WERKT.md
+INSTALLATIE.md
+MCP-TOOLS-UPDATE.md
+NIEUWE-FEATURES.md
+QUICK-REFERENCE.md
+READY-TO-COMMIT.md
+SCHEMA-ANALYSE.md
+SCHEMA-INTROSPECTION-LIMITATIONS.md
+SECURITY-CLEANUP.md
+SECURITY.md
+SPE-CONFIGURATIE.md
+SPE-SERVICES-COMPLETE.md
+STATUS.md
+SUMMARY-v1.1.md
+VOORBEELDEN.md
+VSIX-PACKAGING.md
+
+# Build files
+build-vsix.ps1
+*.vsix
+
+# Git files
+.git/**
+.gitignore
+.github/**
+
+# Node modules
+node_modules/**
+
+# VS Code examples
+claude_desktop_config.json
+.vscode/**
+!.vscode/README.md
+
+# Schema files
+graphql-schema.json

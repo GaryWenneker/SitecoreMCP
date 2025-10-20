@@ -1,0 +1,28 @@
+name: Root Hygiene Enforcement
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  scan-root:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan for .md or .ps1 files in root (except README.md)
+        run: |
+          shopt -s nullglob
+          bad_files=( $(ls -1 *.md *.ps1 *.cjs 2>/dev/null | grep -v '^README.md$' || true) )
+          if [ ${#bad_files[@]} -gt 0 ]; then
+            echo "[FAIL] Found documentation or scripts in repo root - all must be under docs/, scripts/wrappers/, or other subdirectories:"
+            for f in "${bad_files[@]}"; do echo "  - $f"; done
+            echo ""
+            echo "Root cleanup is complete. Only config files and README.md are allowed in root."
+            echo "Move any remaining .md files to docs/ and .ps1/.cjs files to scripts/wrappers/."
+            exit 1
+          else
+            echo "[OK] Root is clean! Only config files and README.md present."
+          fi
+        shell: bash

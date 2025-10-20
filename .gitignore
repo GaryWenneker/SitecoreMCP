@@ -1,0 +1,42 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# IDE - contains sensitive data
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+schema-analysis.json
+schema-analysis-full.json
+test-results/
+
+# Data/Schema files (generated)
+data/
+graph.json
+graphql-schema*.json
+
+# Logs
+logs/
+*.log
+
+# VSIX
+*.vsix
